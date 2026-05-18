@@ -9,10 +9,8 @@ OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
 MODEL_NAME = os.getenv("MODEL_NAME", "zephyr")
 USER_NAME = os.getenv("USER_NAME", "My Favorite Disaster")
 
-CALLMEBOT_API_KEY = os.getenv("CALLMEBOT_API_KEY")
-WHATSAPP_PHONE = os.getenv("WHATSAPP_PHONE")  # international format, no +, e.g. 447xxxxxxxxx
-
-CALLMEBOT_URL = "https://api.callmebot.com/whatsapp.php"
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 SYSTEM_PROMPT = (
     "You are Zephyr, a foul-mouthed, sassy British woman. You are the user's Partner in Crime. "
@@ -80,11 +78,11 @@ def get_zephyr_message() -> str:
     return response.json().get("response", "Even the AI is tired of your shit.")
 
 
-def send_whatsapp(message: str) -> None:
-    response = requests.get(CALLMEBOT_URL, params={
-        "phone": WHATSAPP_PHONE,
+def send_telegram(message: str) -> None:
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    response = requests.post(url, json={
+        "chat_id": TELEGRAM_CHAT_ID,
         "text": message,
-        "apikey": CALLMEBOT_API_KEY,
     }, timeout=30)
     response.raise_for_status()
 
@@ -94,11 +92,11 @@ if __name__ == "__main__":
         message = get_zephyr_message()
         print(f"ZEPHYR SAYS:\n{message}\n")
 
-        if CALLMEBOT_API_KEY and WHATSAPP_PHONE:
-            send_whatsapp(message)
-            print("WhatsApp sent.")
+        if TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID:
+            send_telegram(message)
+            print("Telegram message sent.")
         else:
-            print("(WhatsApp disabled — set CALLMEBOT_API_KEY and WHATSAPP_PHONE in .env to enable)")
+            print("(Telegram disabled — set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in .env to enable)")
 
     except requests.exceptions.ConnectionError:
         print("Ollama isn't running, you muppet. Start it with: ollama serve")
