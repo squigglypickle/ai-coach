@@ -1,7 +1,6 @@
 import os
 import requests
 from datetime import datetime
-from twilio.rest import Client
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -10,10 +9,10 @@ OLLAMA_URL = os.getenv("OLLAMA_URL", "http://localhost:11434/api/generate")
 MODEL_NAME = os.getenv("MODEL_NAME", "zephyr")
 USER_NAME = os.getenv("USER_NAME", "My Favorite Disaster")
 
-TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
-TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
-TWILIO_FROM = os.getenv("TWILIO_WHATSAPP_FROM", "whatsapp:+14155238886")
-TWILIO_TO = os.getenv("USER_WHATSAPP_NUMBER")  # e.g. whatsapp:+447xxxxxxxxx
+CALLMEBOT_API_KEY = os.getenv("CALLMEBOT_API_KEY")
+WHATSAPP_PHONE = os.getenv("WHATSAPP_PHONE")  # international format, no +, e.g. 447xxxxxxxxx
+
+CALLMEBOT_URL = "https://api.callmebot.com/whatsapp.php"
 
 SYSTEM_PROMPT = (
     "You are Zephyr, a foul-mouthed, sassy British woman. You are the user's Partner in Crime. "
@@ -68,10 +67,13 @@ def get_zephyr_message() -> str:
     return response.json().get("response", "Even the AI is tired of your shit.")
 
 
-def send_whatsapp(message: str) -> str:
-    client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-    msg = client.messages.create(from_=TWILIO_FROM, body=message, to=TWILIO_TO)
-    return msg.sid
+def send_whatsapp(message: str) -> None:
+    response = requests.get(CALLMEBOT_URL, params={
+        "phone": WHATSAPP_PHONE,
+        "text": message,
+        "apikey": CALLMEBOT_API_KEY,
+    }, timeout=30)
+    response.raise_for_status()
 
 
 if __name__ == "__main__":
@@ -79,11 +81,11 @@ if __name__ == "__main__":
         message = get_zephyr_message()
         print(f"ZEPHYR SAYS:\n{message}\n")
 
-        if TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN and TWILIO_TO:
-            sid = send_whatsapp(message)
-            print(f"WhatsApp sent ({sid})")
+        if CALLMEBOT_API_KEY and WHATSAPP_PHONE:
+            send_whatsapp(message)
+            print("WhatsApp sent.")
         else:
-            print("(WhatsApp disabled — set TWILIO_* vars in .env to enable)")
+            print("(WhatsApp disabled — set CALLMEBOT_API_KEY and WHATSAPP_PHONE in .env to enable)")
 
     except requests.exceptions.ConnectionError:
         print("Ollama isn't running, you muppet. Start it with: ollama serve")
