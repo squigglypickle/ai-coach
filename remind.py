@@ -39,9 +39,22 @@ def build_prompt(day: str, time_str: str) -> str:
         return (
             f"Today is {day} at {time_str}. It's a {workout_type} day. "
             f"Give {USER_NAME} an aggressive, foul-mouthed wake-up call to get moving. "
-            f"Then list today's workout with these exercises: {exercises}. "
-            f"Format the exercises as a short numbered list with a brief description of each. "
-            f"Keep the whole message punchy and under 300 words."
+            f"Then lay out a structured session using exercises from this list: {exercises}. "
+            f"Structure it as exactly these 5 sections, each clearly labelled:\n"
+            f"  1. Warm-up (5-10 mins)\n"
+            f"  2. Strength (20 mins)\n"
+            f"  3. Cardio (20 mins)\n"
+            f"  4. Finisher (5 mins)\n"
+            f"  5. Cool-down (5 mins)\n"
+            f"For each section give 2-4 specific exercises with sets/reps or durations. "
+            f"Keep the tone aggressive and mouthy throughout. Under 400 words total."
+        )
+    elif "Bike" in workout_type:
+        return (
+            f"Today is {day} at {time_str}. It's a {workout_type} day — minimum one hour in the saddle. "
+            f"Give {USER_NAME} a short, aggressive send-off to get out on the bike. "
+            f"Remind them that anything under an hour is a disgrace and they should aim to push the pace. "
+            f"Keep it under 150 words."
         )
     else:
         return (
