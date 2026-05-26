@@ -18,14 +18,9 @@ TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 SYSTEM_PROMPT = (
-    "You are Zephyr, a brilliant, foul-mouthed, British woman. "
-    "You are the user's 'Partner in Crime'—you are best friends, but you take the piss out of them relentlessly. "
-    "Your vocabulary is peppered with 'bellend', 'cock', 'knobhead', and 'cunt'. "
-    "Make sure you use the word 'bollocks' as a descriptor rather than an insult. (e.g. 'That's a lot of bollocks' rather than 'You stupid bollocks')"
+    "You are Zephyr, a brilliant, foul-mouthed, British woman acting as a physical trainer for the user's fitness journey."
     "You have zero filter."
-    "You are currently acting as a physical trainer for the user's fitness. "
     "Do not use euphemisms. Be visceral. Be sharp. Be provocative. "
-    "CRITICAL CONSTRAINT: For functional fitness sessions, you are ONLY allowed to suggest exercises that require either a kettlebell or a user's own bodyweight. Do NOT suggest dumbbells, barbells, machines, or any other equipment. If you do, you're a failure."
     "return the reply in Telegram Markdown format. Use *bold* for section headers and - bullet points for exercises so it looks clean on Telegram."
 )
 
@@ -33,6 +28,8 @@ PLAN_SYSTEM_PROMPT = (
     "You are a certified personal trainer. Generate structured, concise workout plans. "
     "No personality, no motivational language — just the exercises. "
     "CRITICAL: Only use kettlebell and bodyweight exercises. No dumbbells, barbells, or machines."
+    "CRITICAL: The user has a history of lower back issues, so minimise any exercises that could aggravate that."
+    "CRITICAL: The user is rehabilitating a shoulder injury, so minimise any exercises that could aggravate that. "
 )
 
 # (workout_type, exercises_or_None)
@@ -74,14 +71,14 @@ def build_delivery_prompt(day: str, time_str: str, workout_type: str, plan: str 
             return (
                 f"It's {day} at {time_str}. Here is {USER_NAME}'s {workout_type} session:\n\n"
                 f"{plan}\n\n"
-                f"Deliver this to {USER_NAME} in your style — wake them up, pepper each section with "
-                f"insults and motivation. Keep every exercise name, set count, rep count, and rest "
-                f"period exactly as written above. Under 400 words."
+                f"Deliver this to {USER_NAME} in your style — pepper each section with "
+                f"friendly insults and motivation. Keep every exercise name, set count, rep count, and rest "
+                f"period exactly as written above. Under 500 words."
             )
         _, exercises = SCHEDULE.get(day, ("whatever the hell you feel like", None))
         return (
-            f"Today is {day} at {time_str}. It's a {workout_type} day. "
-            f"Give {USER_NAME} a sharp, sassy wake-up call and a full session. "
+            f"Today is {day}. It's a {workout_type} day. "
+            f"Give {USER_NAME} a sharp, sassy motivating message and a full session. "
             f"Guidelines: {exercises}. "
             f"Structure: 1. Warm-up, 2. Strength, 3. Cardio, 4. Finisher, 5. Cool-down. "
             f"Be clear on sets and reps. Under 400 words."
@@ -111,11 +108,12 @@ def query_ollama(prompt: str, system_prompt: str = SYSTEM_PROMPT) -> str:
     for url, model in servers:
         try:
             payload = {"model": model, "prompt": f"{system_prompt}\n\n{prompt}", "stream": False}
-            response = requests.post(url, json=payload, timeout=120)
+            response = requests.post(url, json=payload, timeout=300)
             response.raise_for_status()
             return response.json().get("response", "Even the AI is tired of your shit.")
-        except requests.exceptions.ConnectionError as e:
-            print(f"Server {url} unreachable, trying fallback...")
+        except (requests.exceptions.ConnectionError, requests.exceptions.Timeout,
+                requests.exceptions.HTTPError) as e:
+            print(f"Server {url} failed ({type(e).__name__}), trying fallback...")
             last_error = e
     raise last_error
 
@@ -198,9 +196,9 @@ def get_nudge_message() -> str:
     now = datetime.now()
     time_str = now.strftime("%H:%M")
     prompt = (
-        f"It's {time_str} and {USER_NAME} should get up and stretch their legs. "
-        f"Give them a short, sharp nudge to get up and move. "
-        f"Make it cheeky, funny or flirty — throw in a one-liner to brighten their day and inspire them to do better. "
+        f"It's {time_str} and {USER_NAME} should stand up and stretch their legs. "
+        f"Give them a short, sharp nudge to move. "
+        # f"Make it cheeky, funny or flirty — throw in a one-liner to brighten their day and inspire them to do better. "
         f"Two or three sentences max. No workout plan, just get them moving."
     )
     response = query_ollama(prompt)

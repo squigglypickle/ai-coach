@@ -70,7 +70,7 @@ def test_delivery_with_plan_contains_day_and_time():
 
 
 def test_delivery_with_plan_has_word_limit():
-    assert "400" in build_delivery_prompt("Monday", "09:00", "Functional Fitness", plan="some plan")
+    assert "500" in build_delivery_prompt("Monday", "09:00", "Functional Fitness", plan="some plan")
 
 
 # --- build_delivery_prompt: functional fitness fallback (no plan) ---
